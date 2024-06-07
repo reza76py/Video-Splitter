@@ -2,11 +2,12 @@ import tkinter as tk
 from tkinter import filedialog
 from moviepy.editor import VideoFileClip
 
-class VideoSplitterApp:
+class VideoPlayerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Video Splitter")
+        self.root.title("Video Player")
         self.create_widgets()
+        self.video = None
 
     def create_widgets(self):
         self.upload_btn = tk.Button(self.root, text="Upload Video", command=self.upload_video)
@@ -22,8 +23,8 @@ class VideoSplitterApp:
         self.end_entry = tk.Entry(self.root)
         self.end_entry.pack()
 
-        self.split_btn = tk.Button(self.root, text="Split Video", command=self.split_video)
-        self.split_btn.pack()
+        self.play_btn = tk.Button(self.root, text="Play Segment", command=self.play_segment)
+        self.play_btn.pack()
 
         self.status_label = tk.Label(self.root, text="")
         self.status_label.pack()
@@ -31,18 +32,27 @@ class VideoSplitterApp:
     def upload_video(self):
         self.video_path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi")])
         self.status_label.config(text=f"Selected Video: {self.video_path}")
+        self.video = VideoFileClip(self.video_path)
 
-    def split_video(self):
-        start_time = int(self.start_entry.get())
-        end_time = int(self.end_entry.get())
-        output_path = filedialog.asksaveasfilename(defaultextension=".mp4", filetypes=[("Video files", "*.mp4")])
+    def play_segment(self):
+        if self.video is None:
+            self.status_label.config(text="Please upload a video first.")
+            return
 
-        video = VideoFileClip(self.video_path)
-        clip = video.subclip(start_time, end_time)
-        clip.write_videofile(output_path)
-        self.status_label.config(text=f"Video saved to: {output_path}")
+        try:
+            start_time = int(self.start_entry.get())
+            end_time = int(self.end_entry.get())
+
+            if start_time >= end_time or start_time < 0 or end_time > self.video.duration:
+                self.status_label.config(text="Invalid start or end time.")
+                return
+
+            clip = self.video.subclip(start_time, end_time)
+            clip.preview()
+        except ValueError:
+            self.status_label.config(text="Please enter valid start and end times.")
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = VideoSplitterApp(root)
+    app = VideoPlayerApp(root)
     root.mainloop()
